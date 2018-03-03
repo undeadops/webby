@@ -7,5 +7,4 @@ FROM alpine:3.6
 RUN apk --no-cache add ca-certificates
 WORKDIR /
 COPY --from=0 /go/src/github.com/undeadops/webby/webby .
-RUN ls -la
 CMD ["./webby"]  
