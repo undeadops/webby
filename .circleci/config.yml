@@ -8,6 +8,6 @@ jobs:
        #  docker login -u $DOCKER_USER -p $DOCKER_PASS
      - run: |
          ECR_LOGIN=`aws ecr get-login --no-include-email --region $AWS_REGION` \
-         ${ECR_LOGIN} \
+         $ECR_LOGIN \
          docker build -t $AWS_ACCT.dkr.ecr.us-east-2.amazonaws.com/webby:$CIRCLE_BRANCH-$(echo $CIRCLE_SHA1 | cut -c -7) . \
          docker push $AWS_ACCT.dkr.ecr.us-east-2.amazonaws.com/webby:$CIRCLE_BRANCH-$(echo $CIRCLE_SHA1 | cut -c -7) 
