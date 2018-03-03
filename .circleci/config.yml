@@ -7,7 +7,7 @@ jobs:
        #- run: |
        #  docker login -u $DOCKER_USER -p $DOCKER_PASS
      - run: |
-         ECR_LOGIN=`aws ecr get-login --no-include-email --region $EC2_REGION` \
+         ECR_LOGIN=`aws ecr get-login --no-include-email --region $AWS_REGION` \
          ${ECR_LOGIN}
 
      # build the application image
