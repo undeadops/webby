@@ -59,7 +59,7 @@ type controller struct {
 
 type message struct {
 	Message string
-	Version int
+	Version float64
 }
 
 func main() {
