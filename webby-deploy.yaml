@@ -1,0 +1,17 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: webby
+spec:
+  minReadySeconds: 5
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        name: webby
+    spec:
+      containers:
+      - name: webby
+        image: undeadops/webby:master-4da7caa
+        ports:
+        - containerPort: 5000
