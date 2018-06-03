@@ -6,7 +6,6 @@ jobs:
      - checkout
      - run: |
          docker login -u $DOCKER_USER -p $DOCKER_PASS
-     - run: |
          GIT_SHORT="$(echo ${CIRCLE_SHA1} | cut -c -7)"
          #ECR_LOGIN="$(aws ecr get-login --no-include-email --region ${AWS_REGION})"
          #${ECR_LOGIN} 
