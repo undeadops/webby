@@ -59,7 +59,7 @@ type controller struct {
 
 type message struct {
 	Message string
-	Version int
+	Version float64
 }
 
 func main() {
@@ -112,7 +112,7 @@ func (c *controller) index(w http.ResponseWriter, req *http.Request) {
 
 	m := message{
 		Message: "Hello, World!",
-		Version: 1.0,
+		Version: 1.1,
 	}
 	respondWithJSON(w, http.StatusCreated, m)
 }
