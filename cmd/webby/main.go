@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/http/httputil"
 	"os"
 	"os/signal"
 	"strconv"
@@ -114,6 +115,12 @@ func (c *controller) index(w http.ResponseWriter, req *http.Request) {
 		Message: "Hello, World!",
 		Version: 1.1,
 	}
+	requestDump, err := httputil.DumpRequest(req, true)
+	if err != nil {
+		fmt.Println(err)
+	}
+	c.logger.Printf(string(requestDump))
+
 	respondWithJSON(w, http.StatusCreated, m)
 }
 
