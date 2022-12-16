@@ -2,17 +2,22 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: webby
+  labels:
+    app: webby
 spec:
   minReadySeconds: 5
   replicas: 3
+  selector:
+    matchLabels:
+      app: webby
   template:
     metadata:
       labels:
-        name: webby
+        app: webby
     spec:
       containers:
       - name: webby
-        image: ghcr.io/undeadops/webby:latest
+        image: ghcr.io/undeadops/webby:main-b7ef09
         command: ["webby"]
         ports:
         - containerPort: 5000
