@@ -29,7 +29,7 @@ spec:
             scheme: HTTP
           initialDelaySeconds: 5
           periodSeconds: 5
-          successThreshold: 2
+          successThreshold: 1
           timeoutSeconds: 1
         readinessProbe:
           failureThreshold: 3
@@ -39,6 +39,6 @@ spec:
             scheme: HTTP
           initialDelaySeconds: 10
           periodSeconds: 6
-          successThreshold: 2
+          successThreshold: 1
           timeoutSeconds: 1
       terminationGracePeriodSeconds: 45
