@@ -39,7 +39,7 @@ jobs:
           name: undeadops/webby
           registry: ghcr.io
           platforms: linux/amd64,linux/arm64
-          buildargs: BUILD_TIME=${{ steps.data.outputs }},COMMIT=${{ steps.short-sha.outputs.sha }},RELEASE=main-${{steps.short-sha.outputs.sha}}
+          buildargs: "BUILD_TIME=${{ steps.data.outputs }},COMMIT=${{ steps.short-sha.outputs.sha }},RELEASE=main-${{steps.short-sha.outputs.sha}}"
 				  tags:
             "main-${{ steps.outputs.release-version }}"
 
