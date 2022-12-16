@@ -12,8 +12,10 @@ spec:
     spec:
       containers:
       - name: webby
-        image: ghcr.io/undeadops/webby:latest
+        image: ghcr.io/undeadops/webby:main-b7ef09
         command: ["webby"]
+        args:
+          - -delay
         ports:
         - containerPort: 5000
         livenessProbe:
