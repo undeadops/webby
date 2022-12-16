@@ -1,4 +1,4 @@
-name: ci
+name: Release
 
 on:
   push:
@@ -22,8 +22,8 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       -
-        name: Build and push
-        uses: docker/build-push-action@v3
-        with:
-          push: true
-          tags: undeadops/webby:
+        name: Build
+        run: make docker
+      -
+        name: Push to ghcr.io
+        run: make push

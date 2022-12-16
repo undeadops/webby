@@ -19,3 +19,6 @@ build: clean
 		-ldflags "-s -w -X ${PROJECT}/version.Release=${RELEASE} \
 		-X ${PROJECT}/version.Commit=${COMMIT} -X ${PROJECT}/version.BuildTime=${BUILD_TIME}" \
 		-o ${APP}
+
+docker: build
+	docker build -t ghcr.io/undeadops/webby:${RELEASE} . --build-arg RELEASE=${RELEASE} --build-arg COMMIT=${COMMIT} --build-arg BUILD_TIME=${BUILD_TIME}
