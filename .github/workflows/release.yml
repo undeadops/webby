@@ -32,6 +32,7 @@ jobs:
         id: short-sha
         with:
           length: 6
+      - run: ls -la
       -
         name: Build and push
         uses: elgohr/Publish-Docker-Github-Action@v5
@@ -41,7 +42,6 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
           platforms: linux/amd64,linux/arm64
-          context: .
-          buildargs: "BUILD_TIME=${{ steps.date.outputs }},COMMIT=${{ steps.short-sha.outputs.sha }},RELEASE=main-${{steps.short-sha.outputs.sha}}"
+          buildargs: "BUILD_TIME=${{ steps.date.outputs.name }},COMMIT=${{ steps.short-sha.outputs.sha }},RELEASE=main-${{steps.short-sha.outputs.sha}}"
           tags: "main-${{ steps.outputs.release-version }}"
 
