@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -13,6 +14,14 @@ import (
 	"sync/atomic"
 	"syscall"
 	"time"
+
+	"github.com/undeadops/webby/pkg/brews"
+	"github.com/undeadops/webby/pkg/version"
+)
+
+var (
+	port          string
+	delayShutdown bool
 )
 
 type middleware func(http.Handler) http.Handler
@@ -40,6 +49,30 @@ func (c *controller) shutdown(ctx context.Context, server *http.Server) context.
 		atomic.StoreInt64(&c.healthy, 0)
 		server.ErrorLog.Printf("Server is shutting down...\n")
 
+		if c.delayShutdown == true {
+			server.ErrorLog.Printf("Delaying shutdown for around 35 seconds")
+			b, err := brews.GetBrews("san_diego")
+			if err != nil {
+				server.ErrorLog.Printf("Error Getting San Diego, %s", err)
+			}
+			fmt.Println(fmt.Sprintf("%v", b))
+			server.ErrorLog.Printf("Sleeping for 20 sec")
+			time.Sleep(20 * time.Second)
+			b, err = brews.GetBrews("denver")
+			if err != nil {
+				server.ErrorLog.Printf("Error Getting Denver, %s", err)
+			}
+			fmt.Println(fmt.Sprintf("%v", b))
+			server.ErrorLog.Printf("Sleeping for 15 sec")
+			time.Sleep(15 * time.Second)
+			b, err = brews.GetBrews("salt_lake_city")
+			if err != nil {
+				server.ErrorLog.Printf("Error Getting Salt Lake City, %s", err)
+			}
+			fmt.Println(fmt.Sprintf("%v", b))
+			server.ErrorLog.Printf("End of Dely")
+		}
+
 		ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 		defer cancel()
 
@@ -56,29 +89,35 @@ type controller struct {
 	logger        *log.Logger
 	nextRequestID func() string
 	healthy       int64
+	delayShutdown bool
 }
 
 type message struct {
 	Message string
-	Version float64
+	Version string
 }
 
 func main() {
-	listenAddr := ":5000"
-	if len(os.Args) == 2 {
-		listenAddr = os.Args[1]
-	}
+	flag.StringVar(&port, "port", ":5000", "Port to listen on")
+	flag.BoolVar(&delayShutdown, "delay", false, "Delay shutdown by around 35 seconds")
+	flag.Parse()
 
 	logger := log.New(os.Stdout, "http: ", log.LstdFlags)
 	logger.Printf("Server is starting...")
 
-	c := &controller{logger: logger, nextRequestID: func() string { return strconv.FormatInt(time.Now().UnixNano(), 36) }}
+	c := &controller{
+		logger:        logger,
+		nextRequestID: func() string { return strconv.FormatInt(time.Now().UnixNano(), 36) },
+		delayShutdown: delayShutdown,
+	}
+
 	router := http.NewServeMux()
 	router.HandleFunc("/", c.index)
+	router.HandleFunc("/brews", c.brews)
 	router.HandleFunc("/healthz", c.healthz)
 
 	server := &http.Server{
-		Addr:         listenAddr,
+		Addr:         port,
 		Handler:      (middlewares{c.tracing, c.logging}).apply(router),
 		ErrorLog:     logger,
 		ReadTimeout:  5 * time.Second,
@@ -87,11 +126,11 @@ func main() {
 	}
 	ctx := c.shutdown(context.Background(), server)
 
-	logger.Printf("Server is ready to handle requests at %q\n", listenAddr)
+	logger.Printf("Server is ready to handle requests at %q\n", port)
 	atomic.StoreInt64(&c.healthy, time.Now().UnixNano())
 
 	if err := server.ListenAndServe(); err != http.ErrServerClosed {
-		logger.Fatalf("Could not listen on %q: %s\n", listenAddr, err)
+		logger.Fatalf("Could not listen on %q: %s\n", port, err)
 	}
 	<-ctx.Done()
 	logger.Printf("Server stopped\n")
@@ -113,7 +152,7 @@ func (c *controller) index(w http.ResponseWriter, req *http.Request) {
 
 	m := message{
 		Message: "Hello, World!",
-		Version: 1.1,
+		Version: fmt.Sprintf("commit: %s, build time: %s, release: %s", version.Commit, version.BuildTime, version.Release),
 	}
 	requestDump, err := httputil.DumpRequest(req, true)
 	if err != nil {
@@ -130,6 +169,14 @@ func (c *controller) healthz(w http.ResponseWriter, req *http.Request) {
 	} else {
 		fmt.Fprintf(w, "uptime: %s\n", time.Since(time.Unix(0, h)))
 	}
+}
+
+func (c *controller) brews(w http.ResponseWriter, req *http.Request) {
+	brews, err := brews.GetBrews("san_diego")
+	if err != nil {
+		c.logger.Printf(err.Error())
+	}
+	respondWithJSON(w, http.StatusOK, brews)
 }
 
 func (c *controller) logging(hdlr http.Handler) http.Handler {
