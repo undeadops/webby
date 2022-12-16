@@ -41,6 +41,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
           platforms: linux/amd64,linux/arm64
+          context: .
           buildargs: "BUILD_TIME=${{ steps.date.outputs }},COMMIT=${{ steps.short-sha.outputs.sha }},RELEASE=main-${{steps.short-sha.outputs.sha}}"
           tags: "main-${{ steps.outputs.release-version }}"
 
