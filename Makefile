@@ -21,4 +21,8 @@ build: clean
 		-o ${APP}
 
 docker: build
-	docker build -t ghcr.io/undeadops/webby:${RELEASE} . --build-arg RELEASE=${RELEASE} --build-arg COMMIT=${COMMIT} --build-arg BUILD_TIME=${BUILD_TIME}
+	docker build -t ghcr.io/undeadops/webby:${COMMIT} . --build-arg RELEASE=${RELEASE} --build-arg COMMIT=${COMMIT} --build-arg BUILD_TIME=${BUILD_TIME}
+
+push:
+	docker push ghcr.io/undeadops/webby:${COMMIT}
+
