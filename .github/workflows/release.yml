@@ -23,8 +23,23 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
       -
-        name: Build
-        run: make docker
+        name: datetime
+        id: date
+        run: echo "::set-output name=date::$(date +'%Y-%m-%d_%H:%M:%S')"
       -
-        name: Push to ghcr.io
-        run: make push
+        name: sha
+        uses: benjlevesque/short-sha@v2.1
+        id: short-sha
+        with:
+          length: 6
+      -
+        name: Build and push
+        uses: elgohr/Publish-Docker-Github-Action@v5
+        with:
+          name: undeadops/webby
+          registry: ghcr.io
+          platforms: linux/amd64,linux/arm64
+          buildargs: BUILD_TIME=${{ steps.data.outputs }},COMMIT=${{ steps.short-sha.outputs.sha }},RELEASE=main-${{steps.short-sha.outputs.sha}}
+				  tags:
+            "main-${{ steps.outputs.release-version }}"
+
