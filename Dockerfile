@@ -1,4 +1,4 @@
-FROM public.ecr.aws/docker/library/golang:1.19.4-alpine as build
+FROM public.ecr.aws/docker/library/golang:1.25-alpine as build
 
 ARG RELEASE
 ARG COMMIT
@@ -14,12 +14,12 @@ COPY *.go ./
 COPY . ./
 
 RUN go build -ldflags "-s -w -X ${PROJECT}/version.Release=${RELEASE} \
-			-X ${PROJECT}/version.Commit=${COMMIT} \
-			-X ${PROJECT}/version.BuildTime=${BUILD_TIME}" \
-			-o webby *.go
+	-X ${PROJECT}/version.Commit=${COMMIT} \
+	-X ${PROJECT}/version.BuildTime=${BUILD_TIME}" \
+	-o webby *.go
 
 
-FROM public.ecr.aws/docker/library/alpine:3.17
+FROM public.ecr.aws/docker/library/alpine:3
 
 RUN apk --no-cache add ca-certificates
 WORKDIR /

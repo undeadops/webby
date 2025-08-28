@@ -5,12 +5,14 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/http/httputil"
 	"os"
 	"os/signal"
 	"strconv"
+	"strings"
 	"sync/atomic"
 	"syscall"
 	"time"
@@ -115,6 +117,7 @@ func main() {
 	router.HandleFunc("/", c.index)
 	router.HandleFunc("/brews", c.brews)
 	router.HandleFunc("/healthz", c.healthz)
+	router.HandleFunc("/webhook", c.webhook)
 
 	server := &http.Server{
 		Addr:         port,
@@ -179,6 +182,25 @@ func (c *controller) brews(w http.ResponseWriter, req *http.Request) {
 	respondWithJSON(w, http.StatusOK, brews)
 }
 
+func (c *controller) webhook(w http.ResponseWriter, req *http.Request) {
+	if req.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	body, err := ioutil.ReadAll(req.Body)
+	if err != nil {
+		http.Error(w, "Error reading request body", http.StatusInternalServerError)
+		return
+	}
+
+	headers := formatRequest(req)
+	fmt.Printf("\n==========\nHEADERS:\n%v", headers)
+	fmt.Printf("BODY:%s\n", string(body))
+	fmt.Println("==========")
+	respondWithJSON(w, http.StatusOK, "Received Webhook")
+}
+
 func (c *controller) logging(hdlr http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		defer func(start time.Time) {
@@ -201,4 +223,30 @@ func (c *controller) tracing(hdlr http.Handler) http.Handler {
 		w.Header().Set("X-Request-Id", requestID)
 		hdlr.ServeHTTP(w, req)
 	})
+}
+
+func formatRequest(r *http.Request) string {
+	// Create return string
+	var request []string
+	// Add the request string
+	url := fmt.Sprintf("%v %v %v", r.Method, r.URL, r.Proto)
+	request = append(request, url)
+	// Add the host
+	request = append(request, fmt.Sprintf("Host: %v", r.Host))
+	// Loop through headers
+	for name, headers := range r.Header {
+		name = strings.ToLower(name)
+		for _, h := range headers {
+			request = append(request, fmt.Sprintf("%v: %v", name, h))
+		}
+	}
+
+	// If this is a POST, add post data
+	if r.Method == "POST" {
+		r.ParseForm()
+		request = append(request, "\n")
+		request = append(request, r.Form.Encode())
+	}
+	// Return the request as a string
+	return strings.Join(request, "\n")
 }
