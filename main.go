@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 	"net/http/httputil"
@@ -51,27 +51,27 @@ func (c *controller) shutdown(ctx context.Context, server *http.Server) context.
 		atomic.StoreInt64(&c.healthy, 0)
 		server.ErrorLog.Printf("Server is shutting down...\n")
 
-		if c.delayShutdown == true {
+		if c.delayShutdown {
 			server.ErrorLog.Printf("Delaying shutdown for around 35 seconds")
 			b, err := brews.GetBrews("san_diego")
 			if err != nil {
 				server.ErrorLog.Printf("Error Getting San Diego, %s", err)
 			}
-			fmt.Println(fmt.Sprintf("%v", b))
+			fmt.Printf("%v\n", b)
 			server.ErrorLog.Printf("Sleeping for 20 sec")
 			time.Sleep(20 * time.Second)
 			b, err = brews.GetBrews("denver")
 			if err != nil {
 				server.ErrorLog.Printf("Error Getting Denver, %s", err)
 			}
-			fmt.Println(fmt.Sprintf("%v", b))
+			fmt.Printf("%v", b)
 			server.ErrorLog.Printf("Sleeping for 15 sec")
 			time.Sleep(15 * time.Second)
 			b, err = brews.GetBrews("salt_lake_city")
 			if err != nil {
 				server.ErrorLog.Printf("Error Getting Salt Lake City, %s", err)
 			}
-			fmt.Println(fmt.Sprintf("%v", b))
+			fmt.Printf("%v", b)
 			server.ErrorLog.Printf("End of Dely")
 		}
 
@@ -161,7 +161,7 @@ func (c *controller) index(w http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		fmt.Println(err)
 	}
-	c.logger.Printf(string(requestDump))
+	c.logger.Printf("%s", string(requestDump))
 
 	respondWithJSON(w, http.StatusCreated, m)
 }
@@ -177,7 +177,7 @@ func (c *controller) healthz(w http.ResponseWriter, req *http.Request) {
 func (c *controller) brews(w http.ResponseWriter, req *http.Request) {
 	brews, err := brews.GetBrews("san_diego")
 	if err != nil {
-		c.logger.Printf(err.Error())
+		c.logger.Printf("Error getting brews: %v", err)
 	}
 	respondWithJSON(w, http.StatusOK, brews)
 }
@@ -188,11 +188,22 @@ func (c *controller) webhook(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	body, err := ioutil.ReadAll(req.Body)
+	queryParams := req.URL.Query()
+	codeParm := queryParams.Get("code")
+	if codeParm != "" {
+		codeInt, err := strconv.Atoi(codeParm)
+		if err == nil && codeInt >= 100 && codeInt <= 599 {
+			http.Error(w, fmt.Sprintf("Returning status code %d", codeInt), codeInt)
+			return
+		}
+	}
+
+	body, err := io.ReadAll(req.Body)
 	if err != nil {
 		http.Error(w, "Error reading request body", http.StatusInternalServerError)
 		return
 	}
+	defer req.Body.Close()
 
 	headers := formatRequest(req)
 	fmt.Printf("\n==========\nHEADERS:\n%v", headers)
