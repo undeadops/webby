@@ -28,7 +28,7 @@ jobs:
       -
         name: datetime
         id: date
-        run: echo "::set-output name=date::$(date +'%Y-%m-%d_%H:%M:%S')"
+        run: echo "date=$(date +'%Y-%m-%d_%H:%M:%S')" >> "$GITHUB_OUTPUT"
       -
         name: sha
         uses: benjlevesque/short-sha@v2.1
@@ -44,6 +44,6 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
           platforms: linux/amd64,linux/arm64
-          buildargs: "BUILD_TIME=${{ steps.date.outputs.name }},COMMIT=${{ steps.short-sha.outputs.sha }},RELEASE=main-${{steps.short-sha.outputs.sha}}"
+          buildargs: "BUILD_TIME=${{ steps.date.outputs.date }},COMMIT=${{ steps.short-sha.outputs.sha }},RELEASE=main-${{steps.short-sha.outputs.sha}}"
           tags: "main-${{ steps.short-sha.outputs.sha }}"
 
