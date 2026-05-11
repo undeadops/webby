@@ -245,6 +245,10 @@ func (c *controller) webhook(w http.ResponseWriter, req *http.Request) {
 
 func (c *controller) logging(hdlr http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		if req.URL.Path == "/healthz" {
+			hdlr.ServeHTTP(w, req)
+			return
+		}
 		defer func(start time.Time) {
 			requestID := w.Header().Get("X-Request-Id")
 			if requestID == "" {
