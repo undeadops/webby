@@ -1,4 +1,4 @@
-FROM public.ecr.aws/docker/library/golang:1.25-alpine as build
+FROM public.ecr.aws/docker/library/golang:1.25-alpine AS build
 
 ARG RELEASE
 ARG COMMIT

@@ -18,7 +18,11 @@ import (
 	"time"
 
 	"github.com/undeadops/webby/pkg/brews"
+	"github.com/undeadops/webby/pkg/telemetry"
 	"github.com/undeadops/webby/pkg/version"
+
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/metric"
 )
 
 var (
@@ -92,6 +96,7 @@ type controller struct {
 	nextRequestID func() string
 	healthy       int64
 	delayShutdown bool
+	webhookCount  metric.Int64Counter
 }
 
 type message struct {
@@ -107,10 +112,27 @@ func main() {
 	logger := log.New(os.Stdout, "http: ", log.LstdFlags)
 	logger.Printf("Server is starting...")
 
+	otelShutdown, otelEnabled, err := telemetry.Init(context.Background(), "webby")
+	if err != nil {
+		logger.Fatalf("Could not initialize OpenTelemetry: %s\n", err)
+	}
+	if otelEnabled {
+		logger.Printf("OpenTelemetry enabled")
+	}
+
+	webhookCount, err := otel.Meter("webby").Int64Counter(
+		"webby.webhook.requests",
+		metric.WithDescription("Number of requests to the /webhook endpoint"),
+	)
+	if err != nil {
+		logger.Fatalf("Could not create webhook counter: %s\n", err)
+	}
+
 	c := &controller{
 		logger:        logger,
 		nextRequestID: func() string { return strconv.FormatInt(time.Now().UnixNano(), 36) },
 		delayShutdown: delayShutdown,
+		webhookCount:  webhookCount,
 	}
 
 	router := http.NewServeMux()
@@ -136,6 +158,13 @@ func main() {
 		logger.Fatalf("Could not listen on %q: %s\n", port, err)
 	}
 	<-ctx.Done()
+
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := otelShutdown(shutdownCtx); err != nil {
+		logger.Printf("Error shutting down OpenTelemetry: %s\n", err)
+	}
+
 	logger.Printf("Server stopped\n")
 }
 
@@ -183,6 +212,8 @@ func (c *controller) brews(w http.ResponseWriter, req *http.Request) {
 }
 
 func (c *controller) webhook(w http.ResponseWriter, req *http.Request) {
+	c.webhookCount.Add(req.Context(), 1)
+
 	if req.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
